@@ -55,7 +55,7 @@ export function EventForm({
   const [recurrent, setRecurrent] = useState(!!initial?.recurrence)
   const [days, setDays] = useState<number[]>(initial?.recurrence?.daysOfWeek ?? [])
   const [until, setUntil] = useState(initial?.recurrence?.until ?? '')
-  const [customAmount, setCustomAmount] = useState(1)
+  const [customAmount, setCustomAmount] = useState('1')
   const [customUnit, setCustomUnit] = useState<'semanas' | 'meses'>('meses')
   const [reminders, setReminders] = useState<number[]>(initial?.reminders ?? defaultRemindersFor(presetType ?? 'universidad', data.settings))
 
@@ -209,7 +209,8 @@ export function EventForm({
                 type="number"
                 min={1}
                 value={customAmount}
-                onChange={(e) => setCustomAmount(Math.max(1, Number(e.target.value) || 1))}
+                onChange={(e) => setCustomAmount(e.target.value)}
+                onBlur={() => setCustomAmount((v) => String(Math.max(1, parseInt(v, 10) || 1)))}
               />
               <select value={customUnit} onChange={(e) => setCustomUnit(e.target.value as 'semanas' | 'meses')}>
                 <option value="semanas">Semanas</option>
@@ -218,9 +219,10 @@ export function EventForm({
               <button
                 type="button"
                 className="btn btn-secondary btn-small"
-                onClick={() =>
-                  setUntil(customUnit === 'semanas' ? addDaysISO(date, customAmount * 7) : addMonthsISO(date, customAmount))
-                }
+                onClick={() => {
+                  const amount = Math.max(1, parseInt(customAmount, 10) || 1)
+                  setUntil(customUnit === 'semanas' ? addDaysISO(date, amount * 7) : addMonthsISO(date, amount))
+                }}
               >
                 Aplicar
               </button>
