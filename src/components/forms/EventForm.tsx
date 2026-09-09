@@ -2,10 +2,20 @@ import React, { useState } from 'react'
 import type { EventItem, Importance, ItemType } from '../../types'
 import { ITEM_TYPES, REMINDER_OPTIONS } from '../../types'
 import { makeId } from '../../lib/id'
-import { todayISO } from '../../lib/dateUtils'
+import { addDaysISO, addMonthsISO, todayISO } from '../../lib/dateUtils'
 import { useData } from '../../context/DataContext'
 
 const WEEKDAY_LETTERS = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
+
+const DURATION_PRESETS: { label: string; compute: (from: string) => string }[] = [
+  { label: '1 semana', compute: (from) => addDaysISO(from, 7) },
+  { label: '2 semanas', compute: (from) => addDaysISO(from, 14) },
+  { label: '1 mes', compute: (from) => addMonthsISO(from, 1) },
+  { label: '3 meses', compute: (from) => addMonthsISO(from, 3) },
+  { label: '6 meses', compute: (from) => addMonthsISO(from, 6) },
+  { label: '1 año', compute: (from) => addMonthsISO(from, 12) },
+  { label: 'Sin fin', compute: () => '' },
+]
 
 function defaultRemindersFor(type: ItemType, settings: { defaultExamReminders: number[]; defaultTaskReminders: number[] }) {
   if (type === 'examen' || type === 'entrega') return settings.defaultExamReminders
@@ -179,8 +189,21 @@ export function EventForm({
             </div>
           </div>
           <div className="field">
-            <label>Repetir hasta (opcional)</label>
-            <input type="date" value={until} onChange={(e) => setUntil(e.target.value)} />
+            <label>Repetir durante</label>
+            <div className="wrap-chips" style={{ marginBottom: 10 }}>
+              {DURATION_PRESETS.map((p) => (
+                <button
+                  type="button"
+                  key={p.label}
+                  className={`pill-btn${until === p.compute(date) ? ' selected' : ''}`}
+                  onClick={() => setUntil(p.compute(date))}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <label>O elige una fecha de fin concreta (opcional)</label>
+            <input type="date" value={until} onChange={(e) => setUntil(e.target.value)} min={date} />
           </div>
         </>
       )}
