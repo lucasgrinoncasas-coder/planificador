@@ -66,6 +66,7 @@ export interface EventItem {
   travelMinutes?: number
   notes?: string
   recurrence?: RecurrenceRule
+  excludedDates?: string[] // occurrence dates (ISO) skipped from a recurring event
   importance: Importance
   reminders: number[]
   createdAt: string

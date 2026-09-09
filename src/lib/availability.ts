@@ -10,6 +10,7 @@ export function getBaseBlocksForDate(data: AppData, dateISO: string): Interval[]
 
 // Does this event occur on the given date? (handles multi-day + weekly recurrence)
 export function eventOccursOnDate(event: EventItem, dateISO: string): boolean {
+  if (event.excludedDates?.includes(dateISO)) return false
   if (event.recurrence?.freq === 'weekly') {
     if (event.recurrence.until && dateISO > event.recurrence.until) return false
     if (dateISO < event.date) return false

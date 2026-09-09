@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import type { EventItem, Importance, ItemType } from '../../types'
 import { ITEM_TYPES, REMINDER_OPTIONS } from '../../types'
 import { makeId } from '../../lib/id'
-import { addDaysISO, addMonthsISO, todayISO } from '../../lib/dateUtils'
+import { addDaysISO, addMonthsISO, formatLong, todayISO } from '../../lib/dateUtils'
 import { useData } from '../../context/DataContext'
 
 const WEEKDAY_LETTERS = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
@@ -26,6 +26,7 @@ export function EventForm({
   initial,
   presetType,
   initialDate,
+  occurrenceDate,
   onSaved,
   onCancel,
   onDelete,
@@ -33,6 +34,8 @@ export function EventForm({
   initial?: EventItem
   presetType?: ItemType
   initialDate?: string
+  /** When editing an occurrence of a recurring event, the specific date being viewed. */
+  occurrenceDate?: string
   onSaved: (e: EventItem) => void
   onCancel: () => void
   onDelete?: (id: string) => void
@@ -274,18 +277,46 @@ export function EventForm({
         {isEdit ? 'Guardar cambios' : 'Crear evento'}
       </button>
 
-      {isEdit && initial && (
-        <button
-          type="button"
-          className="btn btn-danger"
-          style={{ marginTop: 10 }}
-          onClick={() => {
-            deleteEvent(initial.id)
-            onDelete?.(initial.id)
-          }}
-        >
-          Eliminar evento
-        </button>
+      {isEdit && initial && initial.recurrence && occurrenceDate ? (
+        <>
+          <button
+            type="button"
+            className="btn btn-danger"
+            style={{ marginTop: 10 }}
+            onClick={() => {
+              updateEvent(initial.id, { excludedDates: [...(initial.excludedDates ?? []), occurrenceDate] })
+              onDelete?.(initial.id)
+            }}
+          >
+            Eliminar solo este día ({formatLong(occurrenceDate)})
+          </button>
+          <button
+            type="button"
+            className="btn btn-danger"
+            style={{ marginTop: 10 }}
+            onClick={() => {
+              deleteEvent(initial.id)
+              onDelete?.(initial.id)
+            }}
+          >
+            Eliminar todos los eventos de esta serie
+          </button>
+        </>
+      ) : (
+        isEdit &&
+        initial && (
+          <button
+            type="button"
+            className="btn btn-danger"
+            style={{ marginTop: 10 }}
+            onClick={() => {
+              deleteEvent(initial.id)
+              onDelete?.(initial.id)
+            }}
+          >
+            Eliminar evento
+          </button>
+        )
       )}
     </form>
   )

@@ -77,7 +77,13 @@ export function CalendarScreen() {
 
       {editingEvent && (
         <Modal title="Editar evento" onClose={() => setEditingEvent(null)}>
-          <EventForm initial={editingEvent} onSaved={() => setEditingEvent(null)} onCancel={() => setEditingEvent(null)} onDelete={() => setEditingEvent(null)} />
+          <EventForm
+            initial={editingEvent}
+            occurrenceDate={selected}
+            onSaved={() => setEditingEvent(null)}
+            onCancel={() => setEditingEvent(null)}
+            onDelete={() => setEditingEvent(null)}
+          />
         </Modal>
       )}
 

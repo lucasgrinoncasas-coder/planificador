@@ -145,7 +145,13 @@ export function TodayScreen({ onNavigatePlan }: { onNavigatePlan: () => void }) 
 
       {editingEvent && (
         <Modal title="Editar evento" onClose={() => setEditingEvent(null)}>
-          <EventForm initial={editingEvent} onSaved={() => setEditingEvent(null)} onCancel={() => setEditingEvent(null)} onDelete={() => setEditingEvent(null)} />
+          <EventForm
+            initial={editingEvent}
+            occurrenceDate={today}
+            onSaved={() => setEditingEvent(null)}
+            onCancel={() => setEditingEvent(null)}
+            onDelete={() => setEditingEvent(null)}
+          />
         </Modal>
       )}
       {editingTask && (
