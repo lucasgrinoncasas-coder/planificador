@@ -2,8 +2,9 @@ import React, { useState } from 'react'
 import { AvailabilityScreen } from './AvailabilityScreen'
 import { GoalsScreen } from './GoalsScreen'
 import { SettingsScreen } from './SettingsScreen'
+import { StatsScreen } from './StatsScreen'
 
-type SubScreen = 'menu' | 'availability' | 'goals' | 'settings'
+type SubScreen = 'menu' | 'availability' | 'goals' | 'settings' | 'stats'
 
 export function MoreScreen() {
   const [sub, setSub] = useState<SubScreen>('menu')
@@ -11,8 +12,10 @@ export function MoreScreen() {
   if (sub === 'availability') return <AvailabilityScreen onBack={() => setSub('menu')} />
   if (sub === 'goals') return <GoalsScreen onBack={() => setSub('menu')} />
   if (sub === 'settings') return <SettingsScreen onBack={() => setSub('menu')} />
+  if (sub === 'stats') return <StatsScreen onBack={() => setSub('menu')} />
 
   const items: { key: SubScreen; label: string; emoji: string; desc: string }[] = [
+    { key: 'stats', label: 'Estadísticas', emoji: '📊', desc: 'Horas por categoría y sueño previsto vs. real' },
     { key: 'availability', label: 'Disponibilidad', emoji: '🕒', desc: 'Tu horario semanal y excepciones' },
     { key: 'goals', label: 'Objetivos', emoji: '🎯', desc: 'Metas recurrentes semanales' },
     { key: 'settings', label: 'Ajustes y copia de seguridad', emoji: '⚙️', desc: 'Notificaciones, exportar/importar' },

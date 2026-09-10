@@ -84,6 +84,11 @@ export function getMonthGrid(monthAnchorISO: string): string[] {
   return eachDayOfInterval({ start, end }).map(toISODate)
 }
 
+export function getMonthRange(dateISO: string): { start: string; end: string } {
+  const anchor = fromISODate(dateISO)
+  return { start: toISODate(startOfMonth(anchor)), end: toISODate(endOfMonth(anchor)) }
+}
+
 export function getWeekGrid(anchorISO: string): string[] {
   const anchor = fromISODate(anchorISO)
   const start = startOfWeek(anchor, { weekStartsOn: 1 })

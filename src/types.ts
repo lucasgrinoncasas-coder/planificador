@@ -10,6 +10,7 @@ export type ItemType =
   | 'viaje'
   | 'cita'
   | 'personal'
+  | 'sueno'
   | 'otro'
 
 export const ITEM_TYPES: { value: ItemType; label: string; emoji: string }[] = [
@@ -24,6 +25,7 @@ export const ITEM_TYPES: { value: ItemType; label: string; emoji: string }[] = [
   { value: 'viaje', label: 'Viaje', emoji: '✈️' },
   { value: 'cita', label: 'Cita', emoji: '🗓️' },
   { value: 'personal', label: 'Personal', emoji: '🏠' },
+  { value: 'sueno', label: 'Sueño', emoji: '😴' },
   { value: 'otro', label: 'Otro', emoji: '•' },
 ]
 
@@ -68,6 +70,8 @@ export interface EventItem {
   notes?: string
   recurrence?: RecurrenceRule
   excludedDates?: string[] // occurrence dates (ISO) skipped from a recurring event
+  plannedMinutes?: number // estimated duration (mainly used for type 'sueno')
+  actualMinutes?: number // real logged duration, once known (mainly used for type 'sueno')
   importance: Importance
   reminders: number[]
   createdAt: string

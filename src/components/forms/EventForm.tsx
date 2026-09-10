@@ -6,6 +6,11 @@ import { addDaysISO, addMonthsISO, formatLong, todayISO } from '../../lib/dateUt
 import { useData } from '../../context/DataContext'
 
 const WEEKDAY_LETTERS = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
+const SLEEP_HOUR_PRESETS = [5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10]
+
+function formatHours(h: number): string {
+  return `${String(h).replace('.', ',')} h`
+}
 
 const DURATION_PRESETS: { label: string; compute: (from: string) => string }[] = [
   { label: '1 semana', compute: (from) => addDaysISO(from, 7) },
@@ -62,6 +67,8 @@ export function EventForm({
   const [customAmount, setCustomAmount] = useState('1')
   const [customUnit, setCustomUnit] = useState<'semanas' | 'meses'>('meses')
   const [reminders, setReminders] = useState<number[]>(initial?.reminders ?? defaultRemindersFor(presetType ?? 'universidad', data.settings))
+  const [plannedHours, setPlannedHours] = useState<number>(initial?.plannedMinutes ? initial.plannedMinutes / 60 : 8)
+  const [actualHours, setActualHours] = useState<number | null>(initial?.actualMinutes != null ? initial.actualMinutes / 60 : null)
 
   const toggleDay = (d: number) => setDays((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d].sort()))
   const toggleReminder = (v: number) => setReminders((prev) => (prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]))
@@ -89,6 +96,8 @@ export function EventForm({
       travelMinutes: travelMinutes ? Number(travelMinutes) : undefined,
       notes: notes.trim() || undefined,
       recurrence: recurrent ? { freq: 'weekly', daysOfWeek: days, interval: repeatEvery, until: until || undefined } : undefined,
+      plannedMinutes: type === 'sueno' ? Math.round(plannedHours * 60) : undefined,
+      actualMinutes: type === 'sueno' && actualHours != null ? Math.round(actualHours * 60) : undefined,
       importance,
       reminders,
       createdAt: initial?.createdAt ?? new Date().toISOString(),
@@ -121,6 +130,47 @@ export function EventForm({
           ))}
         </div>
       </div>
+
+      {type === 'sueno' && (
+        <div className="card" style={{ marginBottom: 14 }}>
+          <div style={{ fontWeight: 700, marginBottom: 10 }}>😴 Sueño</div>
+          <div className="field">
+            <label>Horas previstas de sueño</label>
+            <div className="wrap-chips">
+              {SLEEP_HOUR_PRESETS.map((h) => (
+                <button
+                  type="button"
+                  key={h}
+                  className={`pill-btn${plannedHours === h ? ' selected' : ''}`}
+                  onClick={() => setPlannedHours(h)}
+                >
+                  {formatHours(h)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label>Horas reales dormidas (opcional, regístralo cuando lo sepas)</label>
+            <div className="wrap-chips">
+              {SLEEP_HOUR_PRESETS.map((h) => (
+                <button
+                  type="button"
+                  key={h}
+                  className={`pill-btn${actualHours === h ? ' selected' : ''}`}
+                  onClick={() => setActualHours(h)}
+                >
+                  {formatHours(h)}
+                </button>
+              ))}
+              {actualHours != null && (
+                <button type="button" className="pill-btn" onClick={() => setActualHours(null)}>
+                  ✕ Borrar registro
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="field">
         <label>
