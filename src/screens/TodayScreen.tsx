@@ -2,8 +2,8 @@ import React, { useMemo, useState } from 'react'
 import { useData } from '../context/DataContext'
 import { capitalize, formatDurationMinutes, formatLong, todayISO } from '../lib/dateUtils'
 import { getEventsForDate, getFreeMinutesForDate } from '../lib/availability'
-import { getUnmetGoalsForWeek } from '../lib/scheduler'
-import { getWeekGrid } from '../lib/dateUtils'
+import { getDayHighlights, getUnmetGoalsForWeek } from '../lib/scheduler'
+import { addDaysISO, getWeekGrid } from '../lib/dateUtils'
 import { TypeChip } from '../components/common/TypeChip'
 import type { EventItem, TaskItem } from '../types'
 import { Modal } from '../components/common/Modal'
@@ -18,8 +18,9 @@ function greeting(): string {
 }
 
 export function TodayScreen({ onNavigatePlan }: { onNavigatePlan: () => void }) {
-  const { data, updateTask, markNotificationsRead } = useData()
+  const { data, updateTask } = useData()
   const today = todayISO()
+  const tomorrow = addDaysISO(today, 1)
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null)
   const [editingTask, setEditingTask] = useState<TaskItem | null>(null)
 
@@ -34,7 +35,8 @@ export function TodayScreen({ onNavigatePlan }: { onNavigatePlan: () => void }) 
   const weekDates = getWeekGrid(today)
   const unmetGoals = getUnmetGoalsForWeek(data, weekDates)
 
-  const importantNotifications = data.notificationLog.slice(0, 6)
+  const todayHighlights = useMemo(() => getDayHighlights(data, today), [data, today])
+  const tomorrowHighlights = useMemo(() => getDayHighlights(data, tomorrow), [data, tomorrow])
 
   return (
     <div>
@@ -47,21 +49,39 @@ export function TodayScreen({ onNavigatePlan }: { onNavigatePlan: () => void }) 
         </div>
       </div>
 
-      {importantNotifications.length > 0 && (
+      {(todayHighlights.length > 0 || tomorrowHighlights.length > 0) && (
         <>
-          <div className="section-title">⚠️ Cosas importantes</div>
+          <div className="section-title">⚠️ Avisos</div>
           <div className="list-gap">
-            {importantNotifications.map((n) => (
-              <div key={n.id} className="card" style={{ fontSize: '0.88rem' }}>
-                {n.message}
+            {todayHighlights.map((h, i) => (
+              <div
+                key={`today-${i}`}
+                className="card"
+                style={{ fontSize: '0.88rem', borderLeft: '4px solid var(--danger)', display: 'flex', gap: 8, alignItems: 'center' }}
+              >
+                <span className="chip" style={{ color: 'var(--danger)', flexShrink: 0 }}>
+                  Hoy
+                </span>
+                <span>
+                  {h.icon} {h.text}
+                </span>
+              </div>
+            ))}
+            {tomorrowHighlights.map((h, i) => (
+              <div
+                key={`tomorrow-${i}`}
+                className="card"
+                style={{ fontSize: '0.88rem', borderLeft: '4px solid var(--warning)', display: 'flex', gap: 8, alignItems: 'center' }}
+              >
+                <span className="chip" style={{ color: 'var(--warning)', flexShrink: 0 }}>
+                  Mañana
+                </span>
+                <span>
+                  {h.icon} {h.text}
+                </span>
               </div>
             ))}
           </div>
-          {data.notificationLog.some((n) => !n.read) && (
-            <button className="link-btn" style={{ marginTop: 8 }} onClick={markNotificationsRead}>
-              Marcar como leídas
-            </button>
-          )}
         </>
       )}
 

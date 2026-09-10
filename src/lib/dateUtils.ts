@@ -65,6 +65,13 @@ export function daysBetween(fromISO: string, toISO: string): number {
   return differenceInCalendarDays(fromISODate(toISO), fromISODate(fromISO))
 }
 
+// Number of Monday-aligned week boundaries between two dates (0 = same week).
+export function weeksBetweenAligned(fromISO: string, toISO: string): number {
+  const fromWeekStart = startOfWeek(fromISODate(fromISO), { weekStartsOn: 1 })
+  const toWeekStart = startOfWeek(fromISODate(toISO), { weekStartsOn: 1 })
+  return Math.round(differenceInCalendarDays(toWeekStart, fromWeekStart) / 7)
+}
+
 export function listDatesBetween(fromISO: string, toISO: string): string[] {
   if (daysBetween(fromISO, toISO) < 0) return []
   return eachDayOfInterval({ start: fromISODate(fromISO), end: fromISODate(toISO) }).map(toISODate)

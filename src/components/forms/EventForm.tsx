@@ -57,6 +57,7 @@ export function EventForm({
   const [importance, setImportance] = useState<Importance>(initial?.importance ?? 2)
   const [recurrent, setRecurrent] = useState(!!initial?.recurrence)
   const [days, setDays] = useState<number[]>(initial?.recurrence?.daysOfWeek ?? [])
+  const [repeatEvery, setRepeatEvery] = useState(initial?.recurrence?.interval ?? 1)
   const [until, setUntil] = useState(initial?.recurrence?.until ?? '')
   const [customAmount, setCustomAmount] = useState('1')
   const [customUnit, setCustomUnit] = useState<'semanas' | 'meses'>('meses')
@@ -87,7 +88,7 @@ export function EventForm({
       location: location.trim() || undefined,
       travelMinutes: travelMinutes ? Number(travelMinutes) : undefined,
       notes: notes.trim() || undefined,
-      recurrence: recurrent ? { freq: 'weekly', daysOfWeek: days, until: until || undefined } : undefined,
+      recurrence: recurrent ? { freq: 'weekly', daysOfWeek: days, interval: repeatEvery, until: until || undefined } : undefined,
       importance,
       reminders,
       createdAt: initial?.createdAt ?? new Date().toISOString(),
@@ -189,6 +190,21 @@ export function EventForm({
                   onClick={() => toggleDay(idx)}
                 >
                   {letter}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="field">
+            <label>Frecuencia</label>
+            <div className="wrap-chips">
+              {[1, 2, 3, 4].map((n) => (
+                <button
+                  type="button"
+                  key={n}
+                  className={`pill-btn${repeatEvery === n ? ' selected' : ''}`}
+                  onClick={() => setRepeatEvery(n)}
+                >
+                  {n === 1 ? 'Cada semana' : `Cada ${n} semanas`}
                 </button>
               ))}
             </div>

@@ -1,7 +1,7 @@
 import type { AppData, EventItem, NotificationLogEntry, TaskItem } from '../types'
 import { addDaysISO, formatDurationMinutes, listDatesBetween, timeToMinutes, todayISO } from './dateUtils'
 import { makeId } from './id'
-import { getWeekday } from './dateUtils'
+import { eventOccursOnDate } from './availability'
 
 const LOOKBACK_DAYS = 2
 const LOOKAHEAD_DAYS = 180
@@ -23,7 +23,7 @@ function occurrenceDatesForEvent(event: EventItem, now: Date): string[] {
     const rangeStart = event.date > windowStart ? event.date : windowStart
     const rangeEnd = event.recurrence.until && event.recurrence.until < windowEnd ? event.recurrence.until : windowEnd
     if (rangeStart > rangeEnd) return []
-    return listDatesBetween(rangeStart, rangeEnd).filter((d) => event.recurrence!.daysOfWeek.includes(getWeekday(d)))
+    return listDatesBetween(rangeStart, rangeEnd).filter((d) => eventOccursOnDate(event, d))
   }
   if (event.date < windowStart || event.date > windowEnd) return []
   return [event.date]

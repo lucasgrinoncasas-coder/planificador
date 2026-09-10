@@ -333,3 +333,34 @@ export function weekdayName(dateISO: string): string {
   const names = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
   return names[getWeekday(dateISO)]
 }
+
+// ---------------------------------------------------------------------------
+// 6. Day highlights: the handful of genuinely important things for a given
+//    day (exams, entregas, important events, task deadlines, study load),
+//    used for the "Hoy" / "Mañana" panel instead of a raw notification log.
+// ---------------------------------------------------------------------------
+
+export interface DayHighlight {
+  icon: string
+  text: string
+}
+
+export function getDayHighlights(data: AppData, dateISO: string): DayHighlight[] {
+  const highlights: DayHighlight[] = []
+
+  for (const e of getEventsForDate(data.events, dateISO)) {
+    if (e.type === 'examen') highlights.push({ icon: '📝', text: `Examen: ${e.title}` })
+    else if (e.type === 'entrega') highlights.push({ icon: '📤', text: `Entrega: ${e.title}` })
+    else if (e.importance >= 3) highlights.push({ icon: '⚠️', text: e.title })
+  }
+
+  const dueTasks = data.tasks.filter((t) => t.dueDate === dateISO && t.status !== 'completada' && !t.linkedEventId)
+  for (const t of dueTasks) highlights.push({ icon: '⏰', text: `Vence: ${t.title}` })
+
+  const studyMinutes = data.tasks
+    .filter((t) => t.scheduledDate === dateISO && t.category === 'estudio' && t.status !== 'completada')
+    .reduce((sum, t) => sum + t.estimatedMinutes, 0)
+  if (studyMinutes > 0) highlights.push({ icon: '📚', text: `Estudiar ${formatDurationMinutes(studyMinutes)}` })
+
+  return highlights
+}

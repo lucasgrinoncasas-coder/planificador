@@ -50,6 +50,7 @@ export const REMINDER_OPTIONS = [
 export interface RecurrenceRule {
   freq: 'weekly'
   daysOfWeek: number[] // 0=domingo ... 6=sábado
+  interval?: number // repeat every N weeks; defaults to 1 (every week)
   until?: string // ISO date, inclusive
 }
 

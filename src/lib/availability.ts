@@ -1,5 +1,5 @@
 import type { AppData, EventItem, TaskItem } from '../types'
-import { getWeekday, isDateWithinRange, nowTimeString, timeToMinutes, todayISO } from './dateUtils'
+import { getWeekday, isDateWithinRange, nowTimeString, timeToMinutes, todayISO, weeksBetweenAligned } from './dateUtils'
 import { mergeIntervals, subtractIntervals, totalMinutes, type Interval } from './intervals'
 
 export function getBaseBlocksForDate(data: AppData, dateISO: string): Interval[] {
@@ -14,7 +14,10 @@ export function eventOccursOnDate(event: EventItem, dateISO: string): boolean {
   if (event.recurrence?.freq === 'weekly') {
     if (event.recurrence.until && dateISO > event.recurrence.until) return false
     if (dateISO < event.date) return false
-    return event.recurrence.daysOfWeek.includes(getWeekday(dateISO))
+    if (!event.recurrence.daysOfWeek.includes(getWeekday(dateISO))) return false
+    const interval = event.recurrence.interval ?? 1
+    if (interval <= 1) return true
+    return weeksBetweenAligned(event.date, dateISO) % interval === 0
   }
   const end = event.endDate ?? event.date
   return isDateWithinRange(dateISO, event.date, end)
