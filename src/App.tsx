@@ -48,14 +48,21 @@ export default function App() {
   return (
     <div className="app-shell">
       <div className="app-content">
-        {tab === 'hoy' && <TodayScreen onNavigatePlan={() => setTab('planificar')} />}
-        {tab === 'calendario' && <CalendarScreen />}
-        {tab === 'tareas' && <TasksScreen />}
-        {tab === 'planificar' && <PlanScreen />}
-        {tab === 'mas' && <MoreScreen />}
+        <div key={tab} className="tab-panel">
+          {tab === 'hoy' && <TodayScreen onNavigatePlan={() => setTab('planificar')} />}
+          {tab === 'calendario' && <CalendarScreen />}
+          {tab === 'tareas' && <TasksScreen />}
+          {tab === 'planificar' && <PlanScreen />}
+          {tab === 'mas' && <MoreScreen />}
+        </div>
       </div>
 
-      <button className="fab" onClick={() => setQuickAddOpen(true)} aria-label="Añadir">
+      <button
+        className="fab"
+        onClick={() => setQuickAddOpen(true)}
+        aria-label="Añadir"
+        style={{ transform: quickAddOpen ? 'rotate(45deg) scale(0.94)' : undefined }}
+      >
         +
       </button>
 

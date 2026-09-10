@@ -4,6 +4,8 @@ import type { TaskItem, TaskStatus } from '../types'
 import { Modal } from '../components/common/Modal'
 import { TaskForm } from '../components/forms/TaskForm'
 import { TypeChip, ImportanceChip } from '../components/common/TypeChip'
+import { SwipeableRow } from '../components/common/SwipeableRow'
+import { useToast } from '../context/ToastContext'
 import { findNextAvailableSlot, weekdayName } from '../lib/scheduler'
 import { formatDurationMinutes, formatShort } from '../lib/dateUtils'
 
@@ -11,6 +13,7 @@ type Filter = 'pendiente' | 'en_progreso' | 'completada' | 'todas'
 
 export function TasksScreen() {
   const { data, updateTask } = useData()
+  const { showToast } = useToast()
   const [filter, setFilter] = useState<Filter>('pendiente')
   const [editing, setEditing] = useState<TaskItem | null>(null)
   const [creating, setCreating] = useState(false)
@@ -33,6 +36,16 @@ export function TasksScreen() {
       const suggestion = findNextAvailableSlot(data, task)
       setReorganizing({ task, suggestion })
     }
+  }
+
+  const handleSwipeComplete = (task: TaskItem) => {
+    const previousStatus = task.status
+    updateTask(task.id, { status: 'completada' })
+    showToast({
+      message: '✓ Tarea completada',
+      actionLabel: 'Deshacer',
+      onAction: () => updateTask(task.id, { status: previousStatus }),
+    })
   }
 
   const acceptReorganize = () => {
@@ -75,40 +88,46 @@ export function TasksScreen() {
 
       <div className="list-gap">
         {tasks.map((task) => (
-          <div key={task.id} className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-              <button
-                style={{ textAlign: 'left', border: 'none', background: 'none', flex: 1, padding: 0 }}
-                onClick={() => setEditing(task)}
-              >
-                <div style={{ fontWeight: 700, textDecoration: task.status === 'completada' ? 'line-through' : undefined }}>
-                  {task.title}
-                </div>
-                <div className="wrap-chips" style={{ marginTop: 6 }}>
-                  <TypeChip type={task.category} />
-                  <ImportanceChip importance={task.priority} />
-                  <span className="chip">{formatDurationMinutes(task.estimatedMinutes)}</span>
-                  {task.dueDate && <span className="chip">Límite: {formatShort(task.dueDate)}</span>}
-                  {task.scheduledDate && <span className="chip">📅 {weekdayName(task.scheduledDate)} {formatShort(task.scheduledDate)}</span>}
-                </div>
-              </button>
-            </div>
-            {task.status !== 'completada' && (
-              <div className="row" style={{ marginTop: 10 }}>
-                <button className="btn btn-secondary btn-small" onClick={() => setStatus(task, 'completada')}>
-                  ✅ Hecho
-                </button>
-                {task.status !== 'en_progreso' && (
-                  <button className="btn btn-secondary btn-small" onClick={() => setStatus(task, 'en_progreso')}>
-                    ▶ En progreso
-                  </button>
-                )}
-                <button className="btn btn-secondary btn-small" onClick={() => setStatus(task, 'no_hecha')}>
-                  ✕ No lo he hecho
+          <SwipeableRow key={task.id} disabled={task.status === 'completada'} onComplete={() => handleSwipeComplete(task)}>
+            <div className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                <button
+                  style={{ textAlign: 'left', border: 'none', background: 'none', flex: 1, padding: 0 }}
+                  onClick={() => setEditing(task)}
+                >
+                  <div style={{ fontWeight: 700, textDecoration: task.status === 'completada' ? 'line-through' : undefined }}>
+                    {task.title}
+                  </div>
+                  <div className="wrap-chips" style={{ marginTop: 6 }}>
+                    <TypeChip type={task.category} />
+                    <ImportanceChip importance={task.priority} />
+                    <span className="chip">{formatDurationMinutes(task.estimatedMinutes)}</span>
+                    {task.dueDate && <span className="chip">Límite: {formatShort(task.dueDate)}</span>}
+                    {task.scheduledDate && (
+                      <span className="chip">
+                        📅 {weekdayName(task.scheduledDate)} {formatShort(task.scheduledDate)}
+                      </span>
+                    )}
+                  </div>
                 </button>
               </div>
-            )}
-          </div>
+              {task.status !== 'completada' && (
+                <div className="row" style={{ marginTop: 10 }}>
+                  <button className="btn btn-secondary btn-small" onClick={() => setStatus(task, 'completada')}>
+                    ✅ Hecho
+                  </button>
+                  {task.status !== 'en_progreso' && (
+                    <button className="btn btn-secondary btn-small" onClick={() => setStatus(task, 'en_progreso')}>
+                      ▶ En progreso
+                    </button>
+                  )}
+                  <button className="btn btn-secondary btn-small" onClick={() => setStatus(task, 'no_hecha')}>
+                    ✕ No lo he hecho
+                  </button>
+                </div>
+              )}
+            </div>
+          </SwipeableRow>
         ))}
       </div>
 

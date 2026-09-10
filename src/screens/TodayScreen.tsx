@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from 'react'
 import { useData } from '../context/DataContext'
-import { capitalize, formatDurationMinutes, formatLong, todayISO } from '../lib/dateUtils'
+import { capitalize, formatDurationMinutes, formatLong, nowTimeString, timeToMinutes, todayISO } from '../lib/dateUtils'
 import { getEventsForDate, getFreeMinutesForDate } from '../lib/availability'
 import { getDayHighlights, getUnmetGoalsForWeek } from '../lib/scheduler'
 import { addDaysISO, getWeekGrid } from '../lib/dateUtils'
 import { TypeChip } from '../components/common/TypeChip'
-import type { EventItem, TaskItem } from '../types'
+import { SwipeableRow } from '../components/common/SwipeableRow'
+import { useToast } from '../context/ToastContext'
+import type { EventItem, TaskItem, TaskStatus } from '../types'
 import { Modal } from '../components/common/Modal'
 import { EventForm } from '../components/forms/EventForm'
 import { TaskForm } from '../components/forms/TaskForm'
@@ -19,6 +21,7 @@ function greeting(): string {
 
 export function TodayScreen({ onNavigatePlan }: { onNavigatePlan: () => void }) {
   const { data, updateTask } = useData()
+  const { showToast } = useToast()
   const today = todayISO()
   const tomorrow = addDaysISO(today, 1)
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null)
@@ -38,14 +41,59 @@ export function TodayScreen({ onNavigatePlan }: { onNavigatePlan: () => void }) 
   const todayHighlights = useMemo(() => getDayHighlights(data, today), [data, today])
   const tomorrowHighlights = useMemo(() => getDayHighlights(data, tomorrow), [data, tomorrow])
 
+  const nextUp = useMemo(() => {
+    const nowMinutes = timeToMinutes(nowTimeString())
+    const candidates: { title: string; time: string }[] = [
+      ...events.filter((e) => e.startTime).map((e) => ({ title: e.title, time: e.startTime! })),
+      ...data.tasks
+        .filter((t) => t.scheduledDate === today && t.scheduledStart && t.status !== 'completada')
+        .map((t) => ({ title: t.title, time: t.scheduledStart! })),
+    ]
+    return candidates.filter((c) => timeToMinutes(c.time) >= nowMinutes).sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time))[0]
+  }, [events, data.tasks, today])
+
+  const completeTask = (task: TaskItem, nextStatus: TaskStatus = 'completada') => {
+    const previousStatus = task.status
+    updateTask(task.id, { status: nextStatus })
+    showToast({
+      message: '✓ Tarea completada',
+      actionLabel: 'Deshacer',
+      onAction: () => updateTask(task.id, { status: previousStatus }),
+    })
+  }
+
   return (
     <div>
-      <div className="topbar" style={{ position: 'static', padding: 0, marginBottom: 4 }}>
+      <div className="topbar" style={{ position: 'static', padding: 0, marginBottom: 16 }}>
         <div>
           <div className="muted" style={{ fontSize: '0.85rem' }}>
             {greeting()}
           </div>
           <h1>{capitalize(formatLong(today))}</h1>
+        </div>
+      </div>
+
+      <div className="hero-card">
+        {nextUp ? (
+          <>
+            <div className="muted" style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
+              Siguiente
+            </div>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, marginTop: 4 }}>{nextUp.title}</div>
+            <div style={{ marginTop: 2, fontSize: '0.95rem', fontWeight: 700, opacity: 0.9 }}>{nextUp.time}</div>
+          </>
+        ) : (
+          <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>Sin más compromisos por hoy 🎉</div>
+        )}
+        <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>Te quedan {formatDurationMinutes(freeMinutes)} libres</div>
+          <button
+            className="btn btn-small"
+            style={{ width: 'auto', background: 'rgba(255,255,255,0.22)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}
+            onClick={onNavigatePlan}
+          >
+            Organizar mi día
+          </button>
         </div>
       </div>
 
@@ -113,10 +161,14 @@ export function TodayScreen({ onNavigatePlan }: { onNavigatePlan: () => void }) 
       ) : (
         <div className="list-gap">
           {studyTasks.map((t) => (
-            <button key={t.id} className="card" style={{ width: '100%', textAlign: 'left', border: 'none' }} onClick={() => setEditingTask(t)}>
-              <div style={{ fontWeight: 700 }}>{t.title}</div>
-              <div className="muted" style={{ fontSize: '0.8rem' }}>{formatDurationMinutes(t.estimatedMinutes)}</div>
-            </button>
+            <SwipeableRow key={t.id} onComplete={() => completeTask(t)}>
+              <button className="card" style={{ width: '100%', textAlign: 'left', border: 'none' }} onClick={() => setEditingTask(t)}>
+                <div style={{ fontWeight: 700 }}>{t.title}</div>
+                <div className="muted" style={{ fontSize: '0.8rem' }}>
+                  {formatDurationMinutes(t.estimatedMinutes)}
+                </div>
+              </button>
+            </SwipeableRow>
           ))}
         </div>
       )}
@@ -127,15 +179,19 @@ export function TodayScreen({ onNavigatePlan }: { onNavigatePlan: () => void }) 
       ) : (
         <div className="list-gap">
           {otherTasks.map((t) => (
-            <div key={t.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <button style={{ border: 'none', background: 'none', textAlign: 'left', flex: 1, padding: 0 }} onClick={() => setEditingTask(t)}>
-                <div style={{ fontWeight: 700 }}>{t.title}</div>
-                <div className="muted" style={{ fontSize: '0.8rem' }}>{formatDurationMinutes(t.estimatedMinutes)}</div>
-              </button>
-              <button className="btn btn-secondary btn-small" onClick={() => updateTask(t.id, { status: 'completada' })}>
-                ✅
-              </button>
-            </div>
+            <SwipeableRow key={t.id} onComplete={() => completeTask(t)}>
+              <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <button style={{ border: 'none', background: 'none', textAlign: 'left', flex: 1, padding: 0 }} onClick={() => setEditingTask(t)}>
+                  <div style={{ fontWeight: 700 }}>{t.title}</div>
+                  <div className="muted" style={{ fontSize: '0.8rem' }}>
+                    {formatDurationMinutes(t.estimatedMinutes)}
+                  </div>
+                </button>
+                <button className="btn btn-secondary btn-small" onClick={() => completeTask(t)}>
+                  ✅
+                </button>
+              </div>
+            </SwipeableRow>
           ))}
         </div>
       )}
@@ -155,13 +211,6 @@ export function TodayScreen({ onNavigatePlan }: { onNavigatePlan: () => void }) 
           </div>
         </>
       )}
-
-      <div className="card" style={{ marginTop: 22, textAlign: 'center' }}>
-        <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>Te quedan {formatDurationMinutes(freeMinutes)} libres hoy</div>
-        <button className="btn btn-primary" style={{ marginTop: 12 }} onClick={onNavigatePlan}>
-          Organizar mi día
-        </button>
-      </div>
 
       {editingEvent && (
         <Modal title="Editar evento" onClose={() => setEditingEvent(null)}>

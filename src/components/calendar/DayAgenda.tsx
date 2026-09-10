@@ -3,6 +3,7 @@ import type { AppData, EventItem, TaskItem } from '../../types'
 import { getEventsForDate } from '../../lib/availability'
 import { formatDurationMinutes, timeToMinutes } from '../../lib/dateUtils'
 import { typeColorVar, typeInfo } from '../common/TypeChip'
+import { SwipeableRow } from '../common/SwipeableRow'
 
 interface AgendaEntry {
   key: string
@@ -12,6 +13,7 @@ interface AgendaEntry {
   subtitle?: string
   color: string
   onClick: () => void
+  task?: TaskItem
 }
 
 export function DayAgenda({
@@ -19,11 +21,13 @@ export function DayAgenda({
   dateISO,
   onEditEvent,
   onEditTask,
+  onCompleteTask,
 }: {
   data: AppData
   dateISO: string
   onEditEvent: (e: EventItem) => void
   onEditTask: (t: TaskItem) => void
+  onCompleteTask?: (t: TaskItem) => void
 }) {
   const events = getEventsForDate(data.events, dateISO)
   const tasks = data.tasks.filter((t) => t.scheduledDate === dateISO)
@@ -46,6 +50,7 @@ export function DayAgenda({
       subtitle: `${formatDurationMinutes(t.estimatedMinutes)}${t.status === 'completada' ? ' · Completada' : ''}`,
       color: typeColorVar(t.category),
       onClick: () => onEditTask(t),
+      task: t,
     })),
   ].sort((a, b) => a.timeSort - b.timeSort)
 
@@ -55,25 +60,51 @@ export function DayAgenda({
 
   return (
     <div className="list-gap">
-      {entries.map((entry) => (
-        <button
-          key={entry.key}
-          className="card"
-          style={{ display: 'flex', gap: 12, width: '100%', textAlign: 'left', border: 'none', alignItems: 'center' }}
-          onClick={entry.onClick}
-        >
-          <div style={{ width: 4, alignSelf: 'stretch', borderRadius: 2, background: entry.color }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: '0.92rem' }}>{entry.title}</div>
-            {entry.subtitle && (
-              <div className="muted" style={{ fontSize: '0.78rem' }}>
-                {entry.subtitle}
+      {entries.map((entry) => {
+        const card = (
+          <button
+            className="card"
+            style={{
+              display: 'flex',
+              gap: 12,
+              width: '100%',
+              textAlign: 'left',
+              border: 'none',
+              alignItems: 'center',
+              opacity: entry.task?.status === 'completada' ? 0.55 : 1,
+            }}
+            onClick={entry.onClick}
+          >
+            <div style={{ width: 4, alignSelf: 'stretch', borderRadius: 2, background: entry.color }} />
+            <div style={{ flex: 1 }}>
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: '0.92rem',
+                  textDecoration: entry.task?.status === 'completada' ? 'line-through' : undefined,
+                }}
+              >
+                {entry.title}
               </div>
-            )}
-          </div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'right', minWidth: 44 }}>{entry.time}</div>
-        </button>
-      ))}
+              {entry.subtitle && (
+                <div className="muted" style={{ fontSize: '0.78rem' }}>
+                  {entry.subtitle}
+                </div>
+              )}
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'right', minWidth: 44 }}>{entry.time}</div>
+          </button>
+        )
+
+        if (entry.task && onCompleteTask) {
+          return (
+            <SwipeableRow key={entry.key} disabled={entry.task.status === 'completada'} onComplete={() => onCompleteTask(entry.task!)}>
+              {card}
+            </SwipeableRow>
+          )
+        }
+        return <React.Fragment key={entry.key}>{card}</React.Fragment>
+      })}
     </div>
   )
 }
