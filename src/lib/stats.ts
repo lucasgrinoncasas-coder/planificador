@@ -45,7 +45,8 @@ export function getCategoryTotals(data: AppData, period: StatsPeriod, anchor: st
     }
   }
   for (const t of data.tasks) {
-    if (t.scheduledDate && dates.includes(t.scheduledDate)) {
+    const activeDate = t.completedDate ?? t.scheduledDate
+    if (activeDate && dates.includes(activeDate)) {
       totals[t.category] = (totals[t.category] ?? 0) + t.estimatedMinutes
     }
   }

@@ -6,6 +6,7 @@ import { getDayHighlights, getUnmetGoalsForWeek } from '../lib/scheduler'
 import { addDaysISO, getWeekGrid } from '../lib/dateUtils'
 import { TypeChip } from '../components/common/TypeChip'
 import { SwipeableRow } from '../components/common/SwipeableRow'
+import { DayAgenda } from '../components/calendar/DayAgenda'
 import { useToast } from '../context/ToastContext'
 import type { EventItem, TaskItem, TaskStatus } from '../types'
 import { Modal } from '../components/common/Modal'
@@ -25,7 +26,13 @@ export function TodayScreen({ onNavigatePlan }: { onNavigatePlan: () => void }) 
   const today = todayISO()
   const tomorrow = addDaysISO(today, 1)
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null)
+  const [editingEventDate, setEditingEventDate] = useState(today)
   const [editingTask, setEditingTask] = useState<TaskItem | null>(null)
+
+  const openEvent = (e: EventItem, dateISO: string) => {
+    setEditingEvent(e)
+    setEditingEventDate(dateISO)
+  }
 
   const events = useMemo(
     () => getEventsForDate(data.events, today).sort((a, b) => (a.startTime ?? '').localeCompare(b.startTime ?? '')),
@@ -54,11 +61,11 @@ export function TodayScreen({ onNavigatePlan }: { onNavigatePlan: () => void }) 
 
   const completeTask = (task: TaskItem, nextStatus: TaskStatus = 'completada') => {
     const previousStatus = task.status
-    updateTask(task.id, { status: nextStatus })
+    updateTask(task.id, { status: nextStatus, completedDate: nextStatus === 'completada' ? today : undefined })
     showToast({
       message: '✓ Tarea completada',
       actionLabel: 'Deshacer',
-      onAction: () => updateTask(task.id, { status: previousStatus }),
+      onAction: () => updateTask(task.id, { status: previousStatus, completedDate: undefined }),
     })
   }
 
@@ -139,7 +146,7 @@ export function TodayScreen({ onNavigatePlan }: { onNavigatePlan: () => void }) 
       ) : (
         <div className="list-gap">
           {events.map((e) => (
-            <button key={e.id} className="card" style={{ width: '100%', textAlign: 'left', border: 'none' }} onClick={() => setEditingEvent(e)}>
+            <button key={e.id} className="card" style={{ width: '100%', textAlign: 'left', border: 'none' }} onClick={() => openEvent(e, today)}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <div>
                   <div style={{ fontWeight: 700 }}>{e.title}</div>
@@ -212,11 +219,20 @@ export function TodayScreen({ onNavigatePlan }: { onNavigatePlan: () => void }) 
         </>
       )}
 
+      <div className="section-title">🌙 Mañana</div>
+      <DayAgenda
+        data={data}
+        dateISO={tomorrow}
+        onEditEvent={(e) => openEvent(e, tomorrow)}
+        onEditTask={setEditingTask}
+        onCompleteTask={(t) => completeTask(t)}
+      />
+
       {editingEvent && (
         <Modal title="Editar evento" onClose={() => setEditingEvent(null)}>
           <EventForm
             initial={editingEvent}
-            occurrenceDate={today}
+            occurrenceDate={editingEventDate}
             onSaved={() => setEditingEvent(null)}
             onCancel={() => setEditingEvent(null)}
             onDelete={() => setEditingEvent(null)}

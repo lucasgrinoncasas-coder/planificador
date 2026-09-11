@@ -7,7 +7,7 @@ import { TypeChip, ImportanceChip } from '../components/common/TypeChip'
 import { SwipeableRow } from '../components/common/SwipeableRow'
 import { useToast } from '../context/ToastContext'
 import { findNextAvailableSlot, weekdayName } from '../lib/scheduler'
-import { formatDurationMinutes, formatShort } from '../lib/dateUtils'
+import { formatDurationMinutes, formatShort, todayISO } from '../lib/dateUtils'
 
 type Filter = 'pendiente' | 'en_progreso' | 'completada' | 'todas'
 
@@ -31,7 +31,7 @@ export function TasksScreen() {
   }, [data.tasks, filter])
 
   const setStatus = (task: TaskItem, status: TaskStatus) => {
-    updateTask(task.id, { status })
+    updateTask(task.id, { status, completedDate: status === 'completada' ? todayISO() : undefined })
     if (status === 'no_hecha') {
       const suggestion = findNextAvailableSlot(data, task)
       setReorganizing({ task, suggestion })
@@ -40,11 +40,11 @@ export function TasksScreen() {
 
   const handleSwipeComplete = (task: TaskItem) => {
     const previousStatus = task.status
-    updateTask(task.id, { status: 'completada' })
+    updateTask(task.id, { status: 'completada', completedDate: todayISO() })
     showToast({
       message: '✓ Tarea completada',
       actionLabel: 'Deshacer',
-      onAction: () => updateTask(task.id, { status: previousStatus }),
+      onAction: () => updateTask(task.id, { status: previousStatus, completedDate: undefined }),
     })
   }
 

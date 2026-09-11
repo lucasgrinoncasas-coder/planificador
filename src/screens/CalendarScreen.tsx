@@ -142,11 +142,11 @@ export function CalendarScreen() {
         onEditTask={setEditingTask}
         onCompleteTask={(t) => {
           const previousStatus = t.status
-          updateTask(t.id, { status: 'completada' })
+          updateTask(t.id, { status: 'completada', completedDate: todayISO() })
           showToast({
             message: '✓ Tarea completada',
             actionLabel: 'Deshacer',
-            onAction: () => updateTask(t.id, { status: previousStatus }),
+            onAction: () => updateTask(t.id, { status: previousStatus, completedDate: undefined }),
           })
         }}
       />

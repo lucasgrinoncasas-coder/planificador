@@ -143,12 +143,25 @@ function priorityScore(t: TaskItem, dateISO: string): number {
   return score
 }
 
+// Counts distinct days this week where the goal's category shows any activity:
+// a non-abandoned task of that category (however it was created — via the
+// goal's own suggestions or a plain quick-added task), or a calendar event of
+// that category (e.g. logging "Gimnasio" as a Deporte event). This makes the
+// counter reflect real life instead of only sessions created through the
+// "Aceptar propuesta" flow.
 export function getUnmetGoalsForWeek(data: AppData, weekDates: string[]): { goal: Goal; sessionsSoFar: number; needed: number }[] {
   const result: { goal: Goal; sessionsSoFar: number; needed: number }[] = []
   for (const goal of data.goals.filter((g) => g.active)) {
-    const sessionsSoFar = data.tasks.filter(
-      (t) => t.goalId === goal.id && weekDates.includes(t.scheduledDate ?? '') && t.status !== 'no_hecha'
-    ).length
+    const activeDates = new Set<string>()
+    for (const t of data.tasks) {
+      if (t.category !== goal.category || t.status === 'no_hecha') continue
+      const activeDate = t.completedDate ?? t.scheduledDate
+      if (activeDate && weekDates.includes(activeDate)) activeDates.add(activeDate)
+    }
+    for (const date of weekDates) {
+      if (getEventsForDate(data.events, date).some((e) => e.type === goal.category)) activeDates.add(date)
+    }
+    const sessionsSoFar = activeDates.size
     if (sessionsSoFar < goal.timesPerWeek) {
       result.push({ goal, sessionsSoFar, needed: goal.timesPerWeek - sessionsSoFar })
     }
